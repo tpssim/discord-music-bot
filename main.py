@@ -13,7 +13,7 @@ ytdl_format_options = {
   'format': 'bestaudio/best',
   'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
   'restrictfilenames': True,
-  'noplaylist': True,
+  'extract_flat': True,
   'nocheckcertificate': True,
   'ignoreerrors': False,
   'logtostderr': False,
@@ -46,10 +46,6 @@ class YTDLSource(discord.FFmpegPCMAudio):
     
     loop = loop or asyncio.get_event_loop()
     data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=False))
-
-    if 'entries' in data:
-      # take first item from a playlist
-      data = data['entries'][0]
 
     filename = data['url']
     return cls(filename, **ffmpeg_options, data=data)
@@ -108,9 +104,21 @@ class Music_player():
 
   async def add_song(self, search_term):
 
-    source = await YTDLSource.from_url(search_term, loop=bot.loop)
-    url = source.webpage_url
-    title = source.title
+    data = await bot.loop.run_in_executor(None, lambda: ytdl.extract_info(search_term, download=False))
+
+    # data has entries if link was playlist
+    if 'entries' in data:
+
+      for video in data['entries']:
+        url = video['url']
+        title = video['title']
+        self.queue.append({'url': url, 'title': title})
+      
+      playlist_length = len(data['entries'])
+      return (f'Added {playlist_length} songs to queue.')
+    
+    url = data['url']
+    title = data['title']
 
     if self.playing:
       self.queue.append({'url': url, 'title': title})
