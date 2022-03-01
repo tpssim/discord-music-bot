@@ -111,7 +111,12 @@ class Music_player():
 
       for video in data['entries']:
         url = video['url']
-        title = video['title']
+
+        if 'title' in video:
+          title = video['title']
+        else:
+          title = '-'
+
         self.queue.append({'url': url, 'title': title})
       
       playlist_length = len(data['entries'])
