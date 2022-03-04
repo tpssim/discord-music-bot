@@ -104,6 +104,8 @@ class Music_player():
 
   async def add_song(self, search_term):
 
+    if search_term.startswith('https://'):
+      search_term = 'ytsearch:' + search_term
     data = await bot.loop.run_in_executor(None, lambda: ytdl.extract_info(search_term, download=False))
 
     # data has entries if link was playlist
@@ -120,10 +122,12 @@ class Music_player():
         self.queue.append({'url': url, 'title': title})
       
       playlist_length = len(data['entries'])
-      return (f'Added {playlist_length} songs to queue.')
+      if playlist_length > 1:
+        return (f'Added {playlist_length} songs to queue.')
     
-    url = data['url']
-    title = data['title']
+    else:
+      url = data['url']
+      title = data['title']
 
     if self.playing:
       self.queue.append({'url': url, 'title': title})
