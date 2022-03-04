@@ -104,7 +104,7 @@ class Music_player():
 
   async def add_song(self, search_term):
 
-    if search_term.startswith('https://'):
+    if not search_term.startswith('https://'):
       search_term = 'ytsearch:' + search_term
     data = await bot.loop.run_in_executor(None, lambda: ytdl.extract_info(search_term, download=False))
 
