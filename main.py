@@ -54,7 +54,7 @@ class YTDLSource(discord.FFmpegPCMAudio):
 #----------
 
 
-bot = commands.Bot(command_prefix='!')
+bot = commands.Bot(case_insensitive=True, command_prefix='!')
 
 @bot.event
 async def on_ready():
