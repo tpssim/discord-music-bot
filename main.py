@@ -128,13 +128,12 @@ class Music_player():
     else:
       url = data['url']
       title = data['title']
+      self.queue.append({'url': url, 'title': title})
 
     if self.playing:
-      self.queue.append({'url': url, 'title': title})
       return (f'Added {title} to queue.')
 
     else:  
-      self.queue.append({'url': url, 'title': title})
       return (f'Now playing: {title}')        
 
   async def leave(self):
