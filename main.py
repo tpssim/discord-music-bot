@@ -1,3 +1,4 @@
+from tabnanny import check
 import discord
 from discord.ext import commands
 
@@ -60,6 +61,10 @@ bot = commands.Bot(case_insensitive=True, command_prefix='!')
 async def on_ready():
 
   print(f'Logged in as {bot.user} (ID: {bot.user.id})')
+
+def is_me(m):
+  """Determine if a message was send by the bot"""
+  return m.author == bot.user
 
 
 #----------
@@ -227,10 +232,8 @@ class Music_commands(commands.Cog, name = 'Music commands'):
   async def clean(self, ctx):
     """Clears the bots messages from a channel"""
 
-    async for message in ctx.channel.history(limit=200):
-      if message.author == self.bot.user:
-        await message.delete()
-    await ctx.send('Cleared history.', delete_after=2)
+    deleted = await ctx.channel.purge(limit=100, check=is_me)
+    await ctx.send(f'Deleted {len(deleted)} message(s).', delete_after=2)
 
   @commands.command(aliases=['q'])
   async def queue(self, ctx):
