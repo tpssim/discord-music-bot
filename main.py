@@ -82,7 +82,7 @@ class Music_player():
     self.voice_client = await channel.connect()
     self.voice_client.stop()
 
-    self.id = self.voice_client.guild.id
+    self.id = self.voice_client.channel.id
     self.queue = deque()
     self.playing = False
     self.alive = True
