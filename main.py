@@ -174,11 +174,15 @@ class Music_commands(commands.Cog, name = 'Music commands'):
   async def on_voice_state_update(self, member, before, after):
     """Leaves the voice channel once there are no users connected to it"""
 
-    id = member.guild.id
+    voice_state = member.guild.voice_client
 
-    if id in self.players:   
-      if len(self.players.get(id).voice_client.channel.members) == 1:
-        await self.players.pop(id).leave()
+    if voice_state:
+
+      id = voice_state.channel.id
+      if id in self.players:   
+        
+        if len(self.players.get(id).voice_client.channel.members) == 1:
+          await self.players.pop(id).leave()
 
 
   @commands.command(name='hello')
@@ -197,7 +201,7 @@ class Music_commands(commands.Cog, name = 'Music commands'):
   async def leave(self, ctx):
     """Leaves the users voice channel"""
 
-    id = ctx.voice_client.guild.id
+    id = ctx.voice_client.channel.id
     await self.players.pop(id).leave()
 
   @commands.command(aliases=['stream', 'p'])
@@ -209,7 +213,7 @@ class Music_commands(commands.Cog, name = 'Music commands'):
 
     async with ctx.typing():
 
-      id = ctx.voice_client.guild.id
+      id = ctx.voice_client.channel.id
       player = self.players.get(id)
       
       response = await player.add_song(search_term)
@@ -219,7 +223,7 @@ class Music_commands(commands.Cog, name = 'Music commands'):
   async def skip(self, ctx):
     """Skips the song that is currently playing"""
 
-    id = ctx.voice_client.guild.id
+    id = ctx.voice_client.channel.id
 
     if self.players.get(id).skip():
       await ctx.send('Skipped.')
@@ -239,7 +243,7 @@ class Music_commands(commands.Cog, name = 'Music commands'):
   async def queue(self, ctx):
     """Shows the song queue"""
 
-    id = ctx.voice_client.guild.id
+    id = ctx.voice_client.channel.id
     queue = self.players.get(id).get_queue()
     q_len = len(queue)
     message = 'Songs in queue:\n'
@@ -274,7 +278,7 @@ class Music_commands(commands.Cog, name = 'Music commands'):
       await self._create_player(ctx.author.voice.channel)
       return
 
-    id = ctx.voice_client.guild.id
+    id = ctx.voice_client.channel.id
     if not self.players.get(id):
       await self._create_player(ctx.author.voice.channel)
       return
@@ -291,7 +295,7 @@ class Music_commands(commands.Cog, name = 'Music commands'):
       await ctx.send('You must be connected to a voice channel with the bot to use this command.')
       raise commands.CommandError('Author not connected to a voice channel with the bot.')
 
-    id = ctx.voice_client.guild.id
+    id = ctx.voice_client.channel.id
     if not self.players.get(id) or self.players.get(id).voice_client.channel != ctx.author.voice.channel:
       await ctx.send('You must be connected to a voice channel with the bot to use this command.')
       raise commands.CommandError('Author not connected to a voice channel with the bot.')
