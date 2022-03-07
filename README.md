@@ -9,6 +9,7 @@ Based on the [discordpy basic voice example](https://github.com/Rapptz/discord.p
 - `Python ≥3.9`
 - [`discordpy`](https://discordpy.readthedocs.io/en/stable/intro.html)
 - [`youtube-dl`](https://pypi.org/project/youtube_dl/)
+- [`python-dotenv`](https://pypi.org/project/python-dotenv/)
 - [`ffmpeg`](https://ffmpeg.org/)
 
 ## Running the bot
