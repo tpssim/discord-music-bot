@@ -1,4 +1,3 @@
-from tabnanny import check
 import discord
 from discord.ext import commands
 
