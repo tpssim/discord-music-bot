@@ -4,9 +4,9 @@ from discord.ext import commands
 import youtube_dl
 
 import asyncio
-from collections import deque
 from dotenv import load_dotenv, find_dotenv
 import os
+from threading import Lock
 
 
 ytdl_format_options = {
@@ -82,7 +82,11 @@ class Music_player():
     self.voice_client.stop()
 
     self.id = self.voice_client.channel.id
-    self.queue = deque()
+    
+    self.current_song = None
+    self.queue = []
+    self.q_lock = Lock()
+
     self.playing = False
     self.alive = True
 
@@ -98,9 +102,14 @@ class Music_player():
         
         if len(self.queue) == 0:
           self.playing = False
+          self.current_song = None
 
         else:
-          url = self.queue.popleft()['url']
+          with self.q_lock:
+            song = self.queue.pop(0)
+          
+          self.current_song = song
+          url = song['url']
           self.playing = True
           source = await YTDLSource.from_url(url, loop=bot.loop)
           self.voice_client.play(source, after=lambda e: print(f'Player error: {e}') if e else None) 
@@ -123,7 +132,8 @@ class Music_player():
         else:
           title = '-'
 
-        self.queue.append({'url': url, 'title': title})
+        with self.q_lock:
+          self.queue.append({'url': url, 'title': title})
       
       playlist_length = len(data['entries'])
       if playlist_length > 1:
@@ -132,7 +142,9 @@ class Music_player():
     else:
       url = data['url']
       title = data['title']
-      self.queue.append({'url': url, 'title': title})
+
+      with self.q_lock:
+        self.queue.append({'url': url, 'title': title})
 
     if self.playing:
       return (f'Added {title} to queue.')
@@ -145,6 +157,15 @@ class Music_player():
     await self.voice_client.disconnect()
     self.alive = False
 
+  def move_song(self, from_idx, to_idx):
+
+    if from_idx < to_idx:
+      to_idx -= to_idx
+
+    with self.q_lock:
+      song = self.queue.pop(from_idx)
+      self.queue.insert(to_idx, song)
+
   def skip(self):
 
     if self.playing:
@@ -154,7 +175,14 @@ class Music_player():
       return False
 
   def get_queue(self):
-    return list(self.queue)
+
+    with self.q_lock:
+      q_copy = list(self.queue)
+    return q_copy
+
+  def get_queue_length(self):
+    
+    return len(self.queue)
 
 
 #----------
@@ -265,6 +293,45 @@ class Music_commands(commands.Cog, name = 'Music commands'):
 
     await ctx.send(message)
 
+  @commands.command(aliases=['mv'])
+  async def move(self, ctx, from_pos: int, to_pos: int):
+    """Change song position in queue"""
+
+    id = ctx.voice_client.channel.id
+    player = self.players.get(id)
+    q_len = player.get_queue_length()
+
+    if q_len < from_pos or from_pos < 1 or to_pos < 1:
+      await ctx.send('Invalid position argument.')
+      return
+
+    player.move_song(from_pos - 1, to_pos - 1)
+    await ctx.send(f'Moved song from position{from_pos} to position {to_pos}.')
+
+  @commands.command()
+  async def status(self, ctx):
+
+    id = ctx.voice_client.channel.id
+    player = self.players.get(id)
+
+    playing = player.playing
+
+    if not playing:
+      await ctx.send('Not playing any song. Queue empty.')
+      return
+    
+    song = player.current_song['title']
+    q_len = player.get_queue_length()
+
+    if q_len == 0:
+      await ctx.send(f'Now playing {song}. Queue empty')
+
+    elif q_len == 1:
+      await ctx.send(f'Now playing {song}. 1 song in queue.')
+
+    else:
+      await ctx.send(f'Now playing {song}. {q_len} songs in queue.')
+      
 
   @play.before_invoke
   async def ensure_author_and_bot_voice_before_play(self, ctx):
@@ -284,6 +351,8 @@ class Music_commands(commands.Cog, name = 'Music commands'):
 
   @skip.before_invoke
   @queue.before_invoke
+  @move.before_invoke
+  @status.before_invoke
   async def ensure_author_and_bot_voice_before_skip(self, ctx):
 
     if ctx.author.voice is None:
@@ -319,6 +388,8 @@ class Music_commands(commands.Cog, name = 'Music commands'):
   @join.after_invoke
   @clean.after_invoke
   @queue.after_invoke
+  @move.after_invoke
+  @status.after_invoke
   async def delete_command_message(self, ctx):
     """Removes the command messages once the commands are completed"""
 
