@@ -306,7 +306,7 @@ class Music_commands(commands.Cog, name = 'Music commands'):
       return
 
     player.move_song(from_pos - 1, to_pos - 1)
-    await ctx.send(f'Moved song from position{from_pos} to position {to_pos}.')
+    await ctx.send(f'Moved song from position {from_pos} to position {to_pos}.')
 
   @commands.command()
   async def status(self, ctx):
