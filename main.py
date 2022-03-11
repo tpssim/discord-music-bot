@@ -310,6 +310,7 @@ class Music_commands(commands.Cog, name = 'Music commands'):
 
   @commands.command()
   async def status(self, ctx):
+    """Get currently playing song and queue length"""
 
     id = ctx.voice_client.channel.id
     player = self.players.get(id)
